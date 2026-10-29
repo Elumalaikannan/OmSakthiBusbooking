@@ -3,11 +3,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY backend/BusBooking.Api.csproj backend/
-RUN dotnet restore backend/BusBooking.Api.csproj
+COPY backend/BusBooking.Api/BusBooking.Api.csproj backend/BusBooking.Api/
+RUN dotnet restore backend/BusBooking.Api/BusBooking.Api.csproj
 
 COPY . .
-WORKDIR /src/backend
+WORKDIR /src/backend/BusBooking.Api
 RUN dotnet publish BusBooking.Api.csproj \
     -c Release \
     -o /app/publish \
