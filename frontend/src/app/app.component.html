@@ -1,0 +1,379 @@
+<header class="topbar">
+  <a class="brand" href="#" (click)="$event.preventDefault()">
+    <img class="brand-logo" src="assets/logo.jpg" alt="Om Shakthi logo">
+    <span class="brand-text">
+      <span>Adhiparashakthi Seva Shanga (Womens/Youth Wings)</span>
+      <span>Vignan Nagar, Bengaluru -560075</span>
+    </span>
+  </a>
+  <div class="top-actions" *ngIf="user; else guestHeader">
+    <span class="hello">Hello, {{ user.name }}</span>
+    <span class="role-pill" [class.admin-pill]="isAdmin">{{ user.role }}</span>
+    <button class="button button-quiet button-small" (click)="logout()">Sign out</button>
+  </div>
+  <ng-template #guestHeader><span class="header-caption">Pilgrim Bus Booking: Bengaluru → Melmaruvathur</span></ng-template>
+</header>
+
+<main *ngIf="!user; else dashboard">
+  <section class="auth-layout">
+    <div class="auth-art">
+      <img class="auth-art-image" src="assets/images2.jpg" alt="Adhiparasakthi temple and worship image">
+    </div>
+    
+    <div class="auth-side">
+      <div class="auth-card">
+        <p class="eyebrow" *ngIf="view === 'login'">WELCOME BACK</p>
+        <p class="eyebrow" *ngIf="view === 'register'">YOUR ADVENTURE BEGINS</p>
+        <p class="eyebrow" *ngIf="view === 'forgot' || view === 'reset'">ACCOUNT RECOVERY</p>
+        <h3 *ngIf="view === 'login'">Adhiparashakthi Seva Shanga</h3>
+        <h2 *ngIf="view === 'register'">Make yourself at home.</h2>
+        <h2 *ngIf="view === 'forgot'">Forgot your password?</h2>
+        <h2 *ngIf="view === 'reset'">Choose a new password.</h2>
+        <p class="form-intro" *ngIf="view === 'login'">Sign in to pick up where you left off.</p>
+        <p class="form-intro" *ngIf="view === 'register'">Create an account. The window seat is waiting.</p>
+        <p class="form-intro" *ngIf="view === 'forgot'">Enter your email and we'll help you get back in.</p>
+        <p class="form-intro" *ngIf="view === 'reset'">Enter the reset token and set a new password.</p>
+
+        <div class="notice notice-success" *ngIf="message">{{ message }}</div>
+        <div class="notice notice-error" *ngIf="error">{{ error }}</div>
+        <form *ngIf="view === 'login'" (ngSubmit)="login()">
+          <label>Email address<input name="email" type="email" [(ngModel)]="loginForm.email" placeholder="you@example.com" required autocomplete="email"></label>
+          <label>Password<input name="password" type="password" [(ngModel)]="loginForm.password" placeholder="Your password" required autocomplete="current-password"></label>
+          <div class="form-row"><span></span><button type="button" class="text-button" (click)="view='forgot'; message=''; error=''">Forgot password?</button></div>
+          <button class="button button-primary button-wide" [disabled]="busy">{{ busy ? 'Signing in…' : 'Sign in' }} <span>↗</span></button>
+        </form>
+        <form *ngIf="view === 'register'" (ngSubmit)="register()">
+          <label>Your name<input name="name" [(ngModel)]="registerForm.name" placeholder="Alex Morgan" required autocomplete="name"></label>
+          <label>Email address<input name="email" type="email" [(ngModel)]="registerForm.email" placeholder="you@example.com" required autocomplete="email"></label>
+          <label>Password<input name="password" type="password" [(ngModel)]="registerForm.password" placeholder="At least 8 characters" minlength="8" required autocomplete="new-password"></label>
+          <button class="button button-primary button-wide" [disabled]="busy">Create account <span>↗</span></button>
+        </form>
+        <form *ngIf="view === 'forgot'" (ngSubmit)="forgot()">
+          <label>Email address<input name="email" type="email" [(ngModel)]="forgotEmail" placeholder="you@example.com" required autocomplete="email"></label>
+          <button class="button button-primary button-wide" [disabled]="busy">Send reset instructions <span>↗</span></button>
+        </form>
+        <form *ngIf="view === 'reset'" (ngSubmit)="reset()">
+          <label>Reset token<input name="token" [(ngModel)]="resetToken" required autocomplete="one-time-code"></label>
+          <label>New password<input name="password" type="password" [(ngModel)]="newPassword" minlength="8" required autocomplete="new-password"></label>
+          <button class="button button-primary button-wide" [disabled]="busy">Update password <span>↗</span></button>
+        </form>
+        <p class="auth-switch" *ngIf="view === 'login'">New around here? <button class="text-button" (click)="view='register'; message=''; error=''">Create an account</button></p>
+        <p class="auth-switch" *ngIf="view !== 'login'">Already have an account? <button class="text-button" (click)="view='login'; message=''; error=''">Sign in</button></p>
+      </div>
+      <div class="auth-footnote"><span>SAFE, SIMPLE, ON YOUR SCHEDULE</span><span>© WAYFARER 2026</span></div>
+    </div>
+  </section>
+</main>
+
+<ng-template #dashboard>
+  <main class="dashboard" id="dashboard">
+    <section class="welcome-row">
+      <div><p class="eyebrow">{{ isAdmin ? 'FLEET CONTROL' : 'YOUR NEXT CHAPTER' }}</p>
+        <h1>{{ isAdmin ? 'Adhiparashakthi Seva Shanga' : 'Adhiparashakthi Seva Shanga' }}</h1>
+        <p>{{ isAdmin ? 'Manage routes, fleet and bookings from one place.' : 'A good trip starts with a single ticket.' }}</p>
+      </div>
+      <div class="stat-card"><span>UPCOMING DEPARTURES</span><strong>{{ trips.length | number:'2.0' }}</strong><small>ready to explore</small></div>
+    </section>
+    <nav class="dashboard-menu" aria-label="Dashboard sections">
+      <a href="#dashboard">Dashboard</a>
+      <a *ngIf="isAdmin" href="#passenger-manifest">Passenger Manifest</a>
+      <a href="#booking-activity">{{ isAdmin ? 'Booking activity' : 'Your tickets' }}</a>
+    </nav>
+    <div class="notice notice-success" *ngIf="message">{{ message }}</div>
+    <div class="notice notice-error" *ngIf="error">{{ error }}</div>
+
+    <ng-container *ngIf="seatPickerTripId === null; else seatSelectionPage">
+    <section class="admin-tools" *ngIf="isAdmin">
+      <div class="section-heading"><div><p class="eyebrow">OPERATIONS</p><h2>Build your network</h2></div></div>
+      <div class="admin-grid">
+        <form class="panel" (ngSubmit)="addBus()">
+          <h3>Add a bus</h3><p class="panel-subtitle">Grow the fleet for upcoming routes.</p>
+          <label>Bus name<input name="busName" [(ngModel)]="busForm.name" placeholder="Highland Express" required></label>
+          <div class="field-pair">
+            <label>Registration<input name="registration" [(ngModel)]="busForm.registrationNumber" placeholder="KA-01-AB-1234" required></label>
+            <label>Seats<input name="capacity" type="number" min="50" max="52" [(ngModel)]="busForm.capacity" required></label>
+          </div>
+          <button class="button button-outline" [disabled]="busy">Add to fleet <span>＋</span></button>
+        </form>
+        <form class="panel" (ngSubmit)="addTrip()" *ngIf="buses.length">
+          <h3>Publish a trip</h3><p class="panel-subtitle">Put a new departure on the board.</p>
+          <div class="field-pair">
+            <label>Bus<select name="tripBus" [(ngModel)]="tripForm.busId" required><option *ngFor="let bus of buses" [ngValue]="bus.id">{{ bus.name }} · {{ bus.capacity }} seats</option></select></label>
+            <label>Ticket price<input name="price" type="number" min="1" step="0.01" [(ngModel)]="tripForm.price" required></label>
+          </div>
+          <div class="field-pair">
+            <label>From<input name="origin" [(ngModel)]="tripForm.origin" placeholder="Bengaluru" required></label>
+            <label>To<input name="destination" [(ngModel)]="tripForm.destination" placeholder="Mysuru" required></label>
+          </div>
+          <div class="field-pair">
+            <label>Departure<input name="departure" type="datetime-local" [value]="tripForm.departureUtc" (input)="updateTripDateTime('departureUtc', $event)" (change)="updateTripDateTime('departureUtc', $event)" required></label>
+            <label>Arrival<input name="arrival" type="datetime-local" [value]="tripForm.arrivalUtc" (input)="updateTripDateTime('arrivalUtc', $event)" (change)="updateTripDateTime('arrivalUtc', $event)" required></label>
+          </div>
+          <button class="button button-outline" [disabled]="busy">Publish trip <span>↗</span></button>
+        </form>
+        <div class="panel empty-inline" *ngIf="!buses.length"><h3>One step before trips</h3><p class="panel-subtitle">Add a bus to your fleet, then you can publish trips.</p></div>
+      </div>
+    </section>
+
+    <section class="admin-report-section" id="passenger-manifest" *ngIf="isAdmin">
+      <div class="section-heading">
+        <div><p class="eyebrow">PASSENGER MANIFEST</p><h2>Trip seat dashboard</h2></div>
+      </div>
+      <div class="admin-report-toolbar">
+        <label>Trip to inspect
+          <select name="reportTrip" [ngModel]="reportTripId" (ngModelChange)="selectReportTrip($event)">
+            <option [ngValue]="null">Select a trip</option>
+            <option *ngFor="let trip of managedTrips" [ngValue]="trip.id">
+              {{ trip.origin }} → {{ trip.destination }} · {{ trip.departureUtc | date:'MMM d, y · h:mm a' }} · {{ trip.status }}
+            </option>
+          </select>
+        </label>
+        <button type="button" class="button button-primary no-print" [disabled]="!reportTrip" (click)="printTripReport()">Print trip report <span>⎙</span></button>
+      </div>
+
+      <ng-container *ngIf="reportTrip as trip">
+        <div class="trip-report-print">
+          <header class="report-trip-header">
+            <div><p class="eyebrow">WAYFARER · TRIP REPORT</p><h3>{{ trip.origin }} <span>→</span> {{ trip.destination }}</h3></div>
+            <span class="trip-status" [class.trip-status-cancelled]="trip.status === 'Cancelled'">{{ trip.status }}</span>
+          </header>
+          <dl class="report-trip-details">
+            <div><dt>Bus</dt><dd>{{ trip.busName }} · {{ trip.capacity }} seats</dd></div>
+            <div><dt>Bus registration number</dt><dd>{{ trip.busRegistrationNumber }}</dd></div>
+            <div><dt>Departure</dt><dd>{{ trip.departureUtc | date:'EEE, MMM d, y · h:mm a' }}</dd></div>
+            <div><dt>Arrival</dt><dd>{{ trip.arrivalUtc | date:'EEE, MMM d, y · h:mm a' }}</dd></div>
+            <div><dt>Fare</dt><dd>{{ trip.price | currency:'INR':'symbol':'1.0-0' }}</dd></div>
+            <div><dt>Booking records</dt><dd>{{ reportBookings.length }}</dd></div>
+          </dl>
+
+          <section class="report-seat-section">
+            <div class="report-section-heading"><h4>Seat map</h4><span>Hover over or focus a booked seat to view passenger details.</span></div>
+            <div class="seat-page-legend report-seat-legend">
+              <span><i class="legend-available"></i>Available</span>
+              <span><i class="legend-booked"></i>Has booking history</span>
+            </div>
+            <div class="bus-seat-map report-seat-map" *ngIf="reportSeatRows.length">
+              <div class="bus-seat-row" *ngFor="let row of reportSeatRows">
+                <ng-container *ngFor="let seat of row">
+                  <span class="bus-seat-gap" *ngIf="seat === null"></span>
+                  <span class="admin-report-seat-wrap" *ngIf="seat as reportSeat">
+                    <button type="button" class="bus-seat report-seat"
+                      [class.bus-seat-booked]="!!reportBookingForSeat(reportSeat.seatNumber)"
+                      [attr.aria-label]="reportSeatAriaLabel(reportSeat.seatNumber)">
+                      {{ reportSeat.seatNumber }}
+                    </button>
+                    <span class="admin-seat-tooltip" *ngIf="reportBookingForSeat(reportSeat.seatNumber) as booking" role="tooltip">
+                      <strong>Seat {{ reportSeat.seatNumber }} · {{ booking.status }}</strong>
+                      <span>Name: {{ booking.passengerName || 'Not recorded' }}</span>
+                      <span>Age: {{ booking.passengerAge || 'Not recorded' }}</span>
+                      <span>Mobile: {{ booking.passengerMobileNumber || 'Not recorded' }}</span>
+                      <span>Mandram / Circle: {{ booking.adhiparasakthiCircleName || 'Not provided' }}</span>
+                    </span>
+                  </span>
+                </ng-container>
+              </div>
+            </div>
+          </section>
+
+          <section class="report-bookings-section">
+            <div class="report-section-heading"><h4>Booked passenger details</h4><span>{{ reportBookings.length }} record(s)</span></div>
+            <div class="report-table-wrap" *ngIf="reportBookings.length; else noReportBookings">
+              <p class="booking-activity-count">Showing {{ reportBookingPageStart }}–{{ reportBookingPageEnd }} of {{ reportBookings.length }} passenger records</p>
+              <table class="report-bookings-table">
+                <thead><tr><th>Seat</th><th>Passenger</th><th>Age</th><th>Gender</th><th>Mobile</th><th>Mandram / Circle Name</th><th>Booked by</th><th>Account email</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let booking of displayedReportBookings">
+                    <td>{{ booking.seatNumber | number:'2.0' }}</td>
+                    <td>{{ booking.passengerName || 'Not recorded' }}</td>
+                    <td>{{ booking.passengerAge || '—' }}</td>
+                    <td>{{ booking.passengerGender || '—' }}</td>
+                    <td>{{ booking.passengerMobileNumber || 'Not recorded' }}</td>
+                    <td>{{ booking.adhiparasakthiCircleName || '—' }}</td>
+                    <td>{{ booking.userName }}</td>
+                    <td>{{ booking.userEmail }}</td>
+                    <td>{{ booking.status }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <nav class="booking-pagination no-print" *ngIf="reportBookingPageCount > 1" aria-label="Passenger detail pages">
+              <button type="button" class="button button-outline" (click)="changeReportBookingPage(reportBookingPage - 1)"
+                [disabled]="reportBookingPage === 1" aria-label="Previous page">Previous</button>
+              <span>Page {{ reportBookingPage }} of {{ reportBookingPageCount }}</span>
+              <button type="button" class="button button-outline" (click)="changeReportBookingPage(reportBookingPage + 1)"
+                [disabled]="reportBookingPage === reportBookingPageCount" aria-label="Next page">Next</button>
+            </nav>
+            <ng-template #noReportBookings><p class="report-empty">There are no booking records for this trip.</p></ng-template>
+          </section>
+          <footer class="report-footer">Generated {{ reportGeneratedAt | date:'EEE, MMM d, y · h:mm a' }} · Passenger information is for authorized operations use.</footer>
+        </div>
+      </ng-container>
+      <p class="report-empty" *ngIf="!managedTrips.length">No trips are available to report yet.</p>
+    </section>
+
+    <section class="trip-section trip-management" *ngIf="isAdmin">
+      <div class="section-heading"><div><p class="eyebrow">ADMIN CONTROLS</p><h2>Trip management <span class="heading-count">{{ managedTrips.length }}</span></h2></div></div>
+      <div class="managed-trip-list" *ngIf="managedTrips.length; else noManagedTrips">
+        <article class="managed-trip-card" *ngFor="let trip of managedTrips">
+          <div class="managed-trip-details">
+            <strong>{{ trip.origin }} <span>→</span> {{ trip.destination }}</strong>
+            <small>{{ trip.busName }} · {{ trip.departureUtc | date:'EEE, MMM d · h:mm a' }} · {{ trip.bookingCount }} booking(s)</small>
+          </div>
+          <span class="trip-status" [class.trip-status-cancelled]="trip.status === 'Cancelled'">{{ trip.status }}</span>
+          <div class="managed-trip-actions">
+            <button *ngIf="trip.status === 'Scheduled'" type="button" class="button button-delete" [disabled]="busy" (click)="cancelTrip(trip)">Cancel trip</button>
+            <button *ngIf="trip.status === 'Cancelled' && trip.bookingCount === 0" type="button" class="button button-delete" [disabled]="busy" (click)="deleteTrip(trip)">Delete trip</button>
+            <span class="archive-note" *ngIf="trip.status === 'Cancelled' && trip.bookingCount > 0">Archived — booking history retained</span>
+          </div>
+        </article>
+      </div>
+      <ng-template #noManagedTrips><div class="empty-state compact-empty"><h3>No trips to manage</h3><p>Published trips will appear here.</p></div></ng-template>
+    </section>
+
+    <section class="trip-section">
+      <div class="section-heading"><div><p class="eyebrow">THE OPEN ROAD</p><h2>Available trips <span class="heading-count">{{ trips.length }}</span></h2></div>
+        <label class="admin-booking-select" *ngIf="isAdmin && users.length">Book for
+          <select [(ngModel)]="selectedUserId" name="bookingUser"><option [ngValue]="0">Myself</option><option *ngFor="let account of users" [ngValue]="account.id">{{ account.name }} · {{ account.email }}</option></select>
+        </label>
+      </div>
+      <div class="trip-list" *ngIf="trips.length; else noTrips">
+        <article class="trip-card" *ngFor="let trip of trips">
+          <div class="trip-date"><span>{{ trip.departureUtc | date:'MMM' | uppercase }}</span><strong>{{ trip.departureUtc | date:'dd' }}</strong><small>{{ trip.departureUtc | date:'EEE' | uppercase }}</small></div>
+          <div class="trip-main">
+            <div class="route-row"><div><strong>{{ trip.origin }}</strong><small>{{ trip.departureUtc | date:'h:mm a' }}</small></div><div class="route-duration"><span></span><small>{{ trip.departureUtc | date:'MMM d' }}</small></div><div><strong>{{ trip.destination }}</strong><small>{{ trip.arrivalUtc | date:'h:mm a' }}</small></div></div>
+            <div class="trip-meta"><span>{{ trip.busName }}</span><span>·</span><span>{{ trip.availableSeats }} seats left</span><span>·</span><span>{{ trip.capacity }} seats</span></div>
+          </div>
+          <div class="trip-price"><span>ONE WAY</span><strong>{{ trip.price | currency:'INR':'symbol':'1.0-0' }}</strong><div class="trip-actions"><button class="button button-outline" [disabled]="trip.availableSeats < 1 || busy" (click)="toggleSeatPicker(trip)">Choose seat <span>↗</span></button></div></div>
+        </article>
+      </div>
+      <ng-template #noTrips><div class="empty-state"><span class="empty-icon">↗</span><h3>No trips on the board yet</h3><p>Check back soon for a new way to get there.</p></div></ng-template>
+    </section>
+
+    <section class="booking-section" id="booking-activity">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">{{ isAdmin ? 'ALL PASSENGERS' : 'YOUR TRAVEL PLANS' }}</p>
+          <h2>{{ isAdmin ? 'Booking activity' : 'Your tickets' }} <span class="heading-count">{{ bookings.length }}</span></h2>
+        </div>
+      </div>
+      <div class="booking-activity-wrap" *ngIf="bookings.length; else noBookings">
+        <p class="booking-activity-count">Showing {{ bookingPageStart }}–{{ bookingPageEnd }} of {{ bookings.length }} total activities</p>
+        <div class="booking-activity-scroll">
+          <table class="booking-activity-table">
+            <thead>
+              <!-- <th>Departure</th> -->
+              <tr>
+                <th>Booking</th><th>Route</th><th>Bus</th><th>Seat</th>
+                <th>Passenger</th><th *ngIf="isAdmin">Booked by</th><th>Status</th><th>Fare</th><th *ngIf="isAdmin">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let booking of displayedBookings">
+                <td>{{ booking.id }}</td>
+                <td>{{ booking.origin }} → {{ booking.destination }}</td>
+                <!-- <td>{{ booking.departureUtc | date:'EEE, MMM d · h:mm a' }}</td> -->
+                <td>{{ booking.busName }}<small>{{ booking.busRegistrationNumber }}</small></td>
+                <td>{{ booking.seatNumber | number:'2.0' }}</td>
+                <td>
+                  {{ booking.passengerName || 'Not recorded' }}
+                  <small *ngIf="booking.passengerName">Age {{ booking.passengerAge }} · {{ booking.passengerGender }} · {{ booking.passengerMobileNumber }}</small>
+                  <small *ngIf="booking.adhiparasakthiCircleName">Mandram / Circle: {{ booking.adhiparasakthiCircleName }}</small>
+                </td>
+                <td *ngIf="isAdmin">{{ booking.userName }}<small>{{ booking.userEmail }}</small></td>
+                <td><span class="status" [class.cancelled]="booking.status !== 'Confirmed'">{{ booking.status }}</span></td>
+                <td>{{ booking.price | currency:'INR':'symbol':'1.0-0' }}</td>
+                <td *ngIf="isAdmin"><button *ngIf="booking.status === 'Confirmed'" class="cancel-button" (click)="cancel(booking)" [attr.aria-label]="'Cancel booking ' + booking.id">×</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <nav class="booking-pagination" *ngIf="bookingPageCount > 1" aria-label="Activity pages">
+          <button type="button" class="button button-outline" (click)="changeBookingPage(bookingPage - 1)"
+            [disabled]="bookingPage === 1" aria-label="Previous page">Previous</button>
+          <span>Page {{ bookingPage }} of {{ bookingPageCount }}</span>
+          <button type="button" class="button button-outline" (click)="changeBookingPage(bookingPage + 1)"
+            [disabled]="bookingPage === bookingPageCount" aria-label="Next page">Next</button>
+        </nav>
+      </div>
+      <ng-template #noBookings><div class="empty-state compact-empty"><h3>Your next ticket is waiting</h3><p>Pick a trip above and your booking will show up here.</p></div></ng-template>
+    </section>
+    </ng-container>
+    <ng-template #seatSelectionPage>
+      <section class="seat-selection-page" *ngIf="activeTrip as trip">
+        <button type="button" class="seat-back-button" (click)="backToTrips()">← <span>Back to trips</span></button>
+        <div class="seat-page-heading">
+          <p class="eyebrow">CHOOSE YOUR SEAT</p>
+          <h1>Your journey, your seat.</h1>
+          <p>{{ trip.origin }} <span>→</span> {{ trip.destination }} · {{ trip.departureUtc | date:'EEE, MMM d · h:mm a' }}</p>
+        </div>
+        <div class="seat-page-card">
+          <div class="seat-page-legend">
+            <span><i class="legend-available"></i>Available</span>
+            <span><i class="legend-selected"></i>Selected</span>
+            <span><i class="legend-booked"></i>Booked</span>
+          </div>
+          <p class="seat-loading" *ngIf="loadingSeatsTripId === trip.id">Loading seat availability…</p>
+          <div class="bus-seat-map" *ngIf="loadingSeatsTripId !== trip.id && seatRows.length">
+            <div class="bus-seat-row" *ngFor="let row of seatRows">
+              <ng-container *ngFor="let seat of row">
+                <span class="bus-seat-gap" *ngIf="seat === null"></span>
+                <button *ngIf="seat as availableSeat" type="button" class="bus-seat"
+                  [class.bus-seat-selected]="isSeatSelected(trip.id, availableSeat.seatNumber)"
+                  [class.bus-seat-booked]="availableSeat.status === 'Booked'"
+                  [disabled]="availableSeat.status === 'Booked' || busy"
+                  [attr.aria-label]="'Seat ' + availableSeat.seatNumber + ' ' + (availableSeat.status === 'Booked' ? 'booked' : isSeatSelected(trip.id, availableSeat.seatNumber) ? 'selected' : 'available')"
+                  [attr.aria-pressed]="isSeatSelected(trip.id, availableSeat.seatNumber)"
+                  (click)="selectSeat(trip.id, availableSeat)">{{ availableSeat.seatNumber }}</button>
+              </ng-container>
+            </div>
+          </div>
+          <p class="seat-empty-message" *ngIf="loadingSeatsTripId !== trip.id && !seatRows.length">Seat information is not available for this trip.</p>
+          <section class="passenger-details" *ngIf="selectedSeatCount(trip.id)">
+            <div class="passenger-details-heading">
+              <p class="eyebrow">PASSENGER DETAILS</p>
+              <h2>Who’s travelling?</h2>
+              <p>Enter details for each selected seat.</p>
+            </div>
+            <article class="passenger-card" *ngFor="let seatNumber of selectedSeatNumbers(trip.id)">
+              <h3>Seat {{ seatNumber | number:'2.0' }}</h3>
+              <div class="passenger-fields">
+                <label>Name
+                  <input [name]="'passengerName' + seatNumber" [(ngModel)]="passengerForSeat(trip.id, seatNumber).name"
+                    placeholder="Passenger name" maxlength="100" required autocomplete="name">
+                </label>
+                <label>Age
+                  <input [name]="'passengerAge' + seatNumber" type="number" min="1" max="120" step="1"
+                    [(ngModel)]="passengerForSeat(trip.id, seatNumber).age" placeholder="Age" required>
+                </label>
+                <label>Gender
+                  <select [name]="'passengerGender' + seatNumber" [(ngModel)]="passengerForSeat(trip.id, seatNumber).gender" required>
+                    <option value="">Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+                <label>Mobile number
+                  <input [name]="'passengerMobile' + seatNumber" type="tel"
+                    [(ngModel)]="passengerForSeat(trip.id, seatNumber).mobileNumber"
+                    placeholder="Mobile number" maxlength="20" pattern="[0-9+() -]{7,20}" required autocomplete="tel">
+                </label>
+                <label>Mandram / Circle Name
+                  <input [name]="'passengerCircleName' + seatNumber"
+                    [(ngModel)]="passengerForSeat(trip.id, seatNumber).adhiparasakthiCircleName"
+                    placeholder="Mandram / Circle Name" maxlength="150">
+                </label>
+              </div>
+            </article>
+          </section>
+          <div class="seat-page-summary">
+            <div><span>YOUR SELECTION · {{ selectedSeatCount(trip.id) }}/6</span><strong>{{ selectedSeatLabel(trip.id) }}</strong></div>
+            <strong class="seat-page-price">{{ trip.price * selectedSeatCount(trip.id) | currency:'INR':'symbol':'1.0-0' }}</strong>
+            <button type="button" class="button button-primary" [disabled]="selectedSeatCount(trip.id) === 0 || busy || loadingSeatsTripId === trip.id" (click)="book(trip)">Book {{ selectedSeatCount(trip.id) || '' }} seat{{ selectedSeatCount(trip.id) === 1 ? '' : 's' }} <span>↗</span></button>
+          </div>
+        </div>
+      </section>
+    </ng-template>
+    <footer class="dashboard-footer"><span>GOOD JOURNEYS, GOOD STORIES.</span><span>WAYFARER · BOOK WITH EASE</span></footer>
+  </main>
+</ng-template>

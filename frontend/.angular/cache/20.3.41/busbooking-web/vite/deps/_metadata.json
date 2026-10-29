@@ -1,0 +1,73 @@
+{
+  "hash": "3a1b939f",
+  "configHash": "bf60b674",
+  "lockfileHash": "e03d08f2",
+  "browserHash": "05bed0b5",
+  "optimized": {
+    "@angular/common": {
+      "src": "../../../../../../node_modules/@angular/common/fesm2022/common.mjs",
+      "file": "@angular_common.js",
+      "fileHash": "3bb98326",
+      "needsInterop": false
+    },
+    "@angular/common/http": {
+      "src": "../../../../../../node_modules/@angular/common/fesm2022/http.mjs",
+      "file": "@angular_common_http.js",
+      "fileHash": "94c83110",
+      "needsInterop": false
+    },
+    "@angular/core": {
+      "src": "../../../../../../node_modules/@angular/core/fesm2022/core.mjs",
+      "file": "@angular_core.js",
+      "fileHash": "ec7e35bc",
+      "needsInterop": false
+    },
+    "@angular/forms": {
+      "src": "../../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
+      "file": "@angular_forms.js",
+      "fileHash": "6aed8ad1",
+      "needsInterop": false
+    },
+    "@angular/platform-browser": {
+      "src": "../../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
+      "file": "@angular_platform-browser.js",
+      "fileHash": "58daf9a3",
+      "needsInterop": false
+    },
+    "@angular/platform-browser/animations/async": {
+      "src": "../../../../../../node_modules/@angular/platform-browser/fesm2022/animations/async.mjs",
+      "file": "@angular_platform-browser_animations_async.js",
+      "fileHash": "c77c5b3e",
+      "needsInterop": false
+    },
+    "zone.js": {
+      "src": "../../../../../../node_modules/zone.js/fesm2015/zone.js",
+      "file": "zone__js.js",
+      "fileHash": "d4a83a6a",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "chunk-BKFUW4TA": {
+      "file": "chunk-BKFUW4TA.js"
+    },
+    "chunk-BHUIEZTI": {
+      "file": "chunk-BHUIEZTI.js"
+    },
+    "chunk-OIELDBIB": {
+      "file": "chunk-OIELDBIB.js"
+    },
+    "chunk-NVLRT7YU": {
+      "file": "chunk-NVLRT7YU.js"
+    },
+    "browser-SGTY3ZFA": {
+      "file": "browser-SGTY3ZFA.js"
+    },
+    "chunk-65TINM3M": {
+      "file": "chunk-65TINM3M.js"
+    },
+    "chunk-WDMUDEB6": {
+      "file": "chunk-WDMUDEB6.js"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/busbooking.db
+**/busbooking.db-shm
+**/busbooking.db-wal
