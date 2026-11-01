@@ -43,8 +43,6 @@
         <p class="form-intro" *ngIf="view === 'forgot'">Enter your email and we'll help you get back in.</p>
         <p class="form-intro" *ngIf="view === 'reset'">Enter the reset token and set a new password.</p>
 
-        <div class="notice notice-success" *ngIf="message">{{ message }}</div>
-        <div class="notice notice-error" *ngIf="error">{{ error }}</div>
         <form *ngIf="view === 'login'" (ngSubmit)="login()">
           <label>Email address<input name="email" type="email" [(ngModel)]="loginForm.email" placeholder="you@example.com" required autocomplete="email"></label>
           <label>Password<input name="password" type="password" [(ngModel)]="loginForm.password" placeholder="Your password" required autocomplete="current-password"></label>
@@ -88,9 +86,6 @@
       <a *ngIf="isAdmin" href="#passenger-manifest">Passenger Manifest</a>
       <a href="#booking-activity">{{ isAdmin ? 'Booking activity' : 'Your tickets' }}</a>
     </nav>
-    <div class="notice notice-success" *ngIf="message">{{ message }}</div>
-    <div class="notice notice-error" *ngIf="error">{{ error }}</div>
-
     <ng-container *ngIf="seatPickerTripId === null; else seatSelectionPage">
     <section class="admin-tools" *ngIf="isAdmin">
       <div class="section-heading"><div><p class="eyebrow">OPERATIONS</p><h2>Build your network</h2></div></div>
