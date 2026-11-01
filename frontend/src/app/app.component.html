@@ -11,16 +11,16 @@
   <a class="brand" href="#" (click)="$event.preventDefault()">
     <img class="brand-logo" src="assets/logo.jpg" alt="Om Shakthi logo">
     <span class="brand-text">
-      <span>Adhiparashakthi Seva Shanga (Womens/Youth Wings)</span>
+      <span>Adhiparashakthi Seva Shanga Womens/Youthwings</span>
       <span>Vignan Nagar, Bengaluru -560075</span>
     </span>
   </a>
   <div class="top-actions" *ngIf="user; else guestHeader">
-    <!-- <span class="hello">Hello, {{ user.name }}</span> -->
-    <span class="role-pill" [class.admin-pill]="isAdmin">{{ user.role }}</span>
+    <span class="hello">Hello, {{ user.name }}</span>
+    <!-- <span class="role-pill" [class.admin-pill]="isAdmin">{{ user.role }}</span> -->
     <button class="button button-quiet button-small" (click)="logout()">Sign out</button>
   </div>
-  <ng-template #guestHeader><span class="header-caption">Pilgrim Bus Booking: Bengaluru → Melmaruvathur</span></ng-template>
+  <ng-template #guestHeader><span class="header-caption">Pilgrim Bus Booking Bengaluru → Melmaruvathur</span></ng-template>
 </header>
 
 <main *ngIf="!user; else dashboard">
