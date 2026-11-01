@@ -32,8 +32,11 @@ export class AppComponent implements OnInit {
   seatPickerTripId: number | null = null;
   loadingSeatsTripId: number | null = null;
   view: 'login' | 'register' | 'forgot' | 'reset' = 'login';
-  message = '';
-  error = '';
+  private currentMessage = '';
+  private currentError = '';
+  popupMessage = '';
+  popupType: 'success' | 'error' = 'success';
+  private popupTimeout: number | null = null;
   resetToken = '';
   selectedUserId = 0;
   busy = false;
@@ -46,8 +49,30 @@ export class AppComponent implements OnInit {
 
   constructor(private readonly api: ApiService) {}
 
+  get message(): string { return this.currentMessage; }
+  set message(value: string) {
+    this.currentMessage = value;
+    if (value) this.showPopup('success', value);
+    else if (this.popupType === 'success') this.dismissPopup();
+  }
+
+  get error(): string { return this.currentError; }
+  set error(value: string) {
+    this.currentError = value;
+    if (value) this.showPopup('error', value);
+    else if (this.popupType === 'error') this.dismissPopup();
+  }
+
   ngOnInit(): void {
     if (this.user) this.loadDashboard();
+  }
+
+  dismissPopup(): void {
+    if (this.popupTimeout !== null) {
+      window.clearTimeout(this.popupTimeout);
+      this.popupTimeout = null;
+    }
+    this.popupMessage = '';
   }
 
   get isAdmin(): boolean { return this.user?.role === 'Admin'; }
@@ -92,6 +117,13 @@ export class AppComponent implements OnInit {
     if (Number.isInteger(page) && page >= 1 && page <= this.reportBookingPageCount) {
       this.reportBookingPage = page;
     }
+  }
+
+  private showPopup(type: 'success' | 'error', text: string): void {
+    if (this.popupTimeout !== null) window.clearTimeout(this.popupTimeout);
+    this.popupType = type;
+    this.popupMessage = text;
+    this.popupTimeout = window.setTimeout(() => this.dismissPopup(), 6000);
   }
 
   login(): void {
@@ -147,7 +179,7 @@ export class AppComponent implements OnInit {
       return;
     }
     if (!this.hasCompletePassengerDetails(trip.id)) {
-      this.error = 'Enter a valid name, age, gender, and mobile number for every selected seat.';
+      this.error = 'Enter a valid name, age, and gender, plus a 10-digit mobile number using digits only, for every selected seat.';
       return;
     }
     const userId = this.isAdmin && this.selectedUserId ? this.selectedUserId : undefined;
@@ -255,13 +287,17 @@ export class AppComponent implements OnInit {
   hasCompletePassengerDetails(tripId: number): boolean {
     return this.selectedSeatNumbers(tripId).every(seatNumber => {
       const passenger = this.passengerDetails[tripId]?.[seatNumber];
-      const mobileDigits = passenger?.mobileNumber.replace(/\D/g, '') ?? '';
+      const mobileNumber = passenger?.mobileNumber ?? '';
       return !!passenger?.name.trim() && passenger.name.trim().length <= 100
         && passenger.age !== null && Number.isInteger(passenger.age) && passenger.age >= 1 && passenger.age <= 120
         && ['Male', 'Female', 'Other'].includes(passenger.gender)
-        && /^[0-9+() -]{7,20}$/.test(passenger.mobileNumber)
-        && mobileDigits.length >= 7 && mobileDigits.length <= 15;
+        && /^[0-9]{10}$/.test(mobileNumber);
     });
+  }
+
+  updatePassengerMobile(tripId: number, seatNumber: number, value: string): void {
+    const passenger = this.passengerDetails[tripId]?.[seatNumber];
+    if (passenger) passenger.mobileNumber = value.replace(/[^0-9]/g, '').slice(0, 10);
   }
 
   isSeatSelected(tripId: number, seatNumber: number): boolean {

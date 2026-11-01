@@ -478,14 +478,12 @@ static bool IsValidPassengerDetails(string? name, int? age, string? gender, stri
 {
     if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > 100
         || age is < 1 or > 120 || string.IsNullOrWhiteSpace(gender)
-        || string.IsNullOrWhiteSpace(mobileNumber) || mobileNumber.Trim().Length > 20)
+        || mobileNumber is null || mobileNumber.Length != 10)
         return false;
     if (gender is not ("Male" or "Female" or "Other")
         && !new[] { "Male", "Female", "Other" }.Contains(gender, StringComparer.OrdinalIgnoreCase))
         return false;
-    var digitCount = mobileNumber.Count(char.IsDigit);
-    return digitCount is >= 7 and <= 15
-        && mobileNumber.All(character => char.IsDigit(character) || character is '+' or '(' or ')' or '-' or ' ');
+    return mobileNumber.All(character => character is >= '0' and <= '9');
 }
 
 static bool IsValidCircleName(string? circleName) =>

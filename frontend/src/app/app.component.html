@@ -1,14 +1,23 @@
+<div class="feedback-popup" *ngIf="popupMessage"
+  [class.feedback-popup-error]="popupType === 'error'"
+  [attr.role]="popupType === 'error' ? 'alert' : 'status'"
+  [attr.aria-live]="popupType === 'error' ? 'assertive' : 'polite'">
+  <span class="feedback-popup-icon" aria-hidden="true">{{ popupType === 'error' ? '!' : '✓' }}</span>
+  <span class="feedback-popup-text">{{ popupMessage }}</span>
+  <button type="button" class="feedback-popup-close" aria-label="Dismiss notification" (click)="dismissPopup()">×</button>
+</div>
+
 <header class="topbar">
   <a class="brand" href="#" (click)="$event.preventDefault()">
     <img class="brand-logo" src="assets/logo.jpg" alt="Om Shakthi logo">
     <span class="brand-text">
-      <span>Adhiparashakthi Seva Shanga (Womens/Youth Wings)</span>
-      <span>Vignan Nagar, Bengaluru -560075</span>
+      <span>Adhiparashakthi Seva Shanga Womens-Youthwings</span>
+      <span>Vignan Nagar Bengaluru-560075</span>
     </span>
   </a>
   <div class="top-actions" *ngIf="user; else guestHeader">
     <span class="hello">Hello, {{ user.name }}</span>
-    <span class="role-pill" [class.admin-pill]="isAdmin">{{ user.role }}</span>
+    <!-- <span class="role-pill" [class.admin-pill]="isAdmin">{{ user.role }}</span> -->
     <button class="button button-quiet button-small" (click)="logout()">Sign out</button>
   </div>
   <ng-template #guestHeader><span class="header-caption">Pilgrim Bus Booking: Bengaluru → Melmaruvathur</span></ng-template>
@@ -178,11 +187,25 @@
           <section class="report-bookings-section">
             <div class="report-section-heading"><h4>Booked passenger details</h4><span>{{ reportBookings.length }} record(s)</span></div>
             <div class="report-table-wrap" *ngIf="reportBookings.length; else noReportBookings">
-              <p class="booking-activity-count">Showing {{ reportBookingPageStart }}–{{ reportBookingPageEnd }} of {{ reportBookings.length }} passenger records</p>
+              <p class="booking-activity-count no-print">Showing {{ reportBookingPageStart }}–{{ reportBookingPageEnd }} of {{ reportBookings.length }} passenger records</p>
+              <p class="booking-activity-count report-print-only-block">Printing all {{ reportBookings.length }} passenger records</p>
               <table class="report-bookings-table">
                 <thead><tr><th>Seat</th><th>Passenger</th><th>Age</th><th>Gender</th><th>Mobile</th><th>Mandram / Circle Name</th><th>Booked by</th><th>Account email</th><th>Status</th></tr></thead>
-                <tbody>
+                <tbody class="no-print">
                   <tr *ngFor="let booking of displayedReportBookings">
+                    <td>{{ booking.seatNumber | number:'2.0' }}</td>
+                    <td>{{ booking.passengerName || 'Not recorded' }}</td>
+                    <td>{{ booking.passengerAge || '—' }}</td>
+                    <td>{{ booking.passengerGender || '—' }}</td>
+                    <td>{{ booking.passengerMobileNumber || 'Not recorded' }}</td>
+                    <td>{{ booking.adhiparasakthiCircleName || '—' }}</td>
+                    <td>{{ booking.userName }}</td>
+                    <td>{{ booking.userEmail }}</td>
+                    <td>{{ booking.status }}</td>
+                  </tr>
+                </tbody>
+                <tbody class="report-print-only">
+                  <tr *ngFor="let booking of reportBookings">
                     <td>{{ booking.seatNumber | number:'2.0' }}</td>
                     <td>{{ booking.passengerName || 'Not recorded' }}</td>
                     <td>{{ booking.passengerAge || '—' }}</td>
@@ -354,9 +377,11 @@
                   </select>
                 </label>
                 <label>Mobile number
-                  <input [name]="'passengerMobile' + seatNumber" type="tel"
-                    [(ngModel)]="passengerForSeat(trip.id, seatNumber).mobileNumber"
-                    placeholder="Mobile number" maxlength="20" pattern="[0-9+() -]{7,20}" required autocomplete="tel">
+                  <input [name]="'passengerMobile' + seatNumber" type="text" inputmode="numeric"
+                    [ngModel]="passengerForSeat(trip.id, seatNumber).mobileNumber"
+                    (ngModelChange)="updatePassengerMobile(trip.id, seatNumber, $event)"
+                    placeholder="10-digit mobile number" maxlength="10" pattern="[0-9]{10}"
+                    title="Enter exactly 10 digits" required autocomplete="tel">
                 </label>
                 <label>Mandram / Circle Name
                   <input [name]="'passengerCircleName' + seatNumber"
