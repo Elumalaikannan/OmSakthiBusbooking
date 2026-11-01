@@ -1,3 +1,12 @@
+<div class="toast toast-success" *ngIf="message" role="status" aria-live="polite">
+  <span>{{ message }}</span>
+  <button type="button" class="toast-close" aria-label="Dismiss notification" (click)="dismissNotification()">×</button>
+</div>
+<div class="toast toast-error" *ngIf="error" role="alert" aria-live="assertive">
+  <span>{{ error }}</span>
+  <button type="button" class="toast-close" aria-label="Dismiss notification" (click)="dismissNotification()">×</button>
+</div>
+
 <header class="topbar">
   <a class="brand" href="#" (click)="$event.preventDefault()">
     <img class="brand-logo" src="assets/logo.jpg" alt="Om Shakthi logo">
@@ -7,7 +16,7 @@
     </span>
   </a>
   <div class="top-actions" *ngIf="user; else guestHeader">
-    <span class="hello">Hello, {{ user.name }}</span>
+    <!-- <span class="hello">Hello, {{ user.name }}</span> -->
     <span class="role-pill" [class.admin-pill]="isAdmin">{{ user.role }}</span>
     <button class="button button-quiet button-small" (click)="logout()">Sign out</button>
   </div>
@@ -34,8 +43,6 @@
         <p class="form-intro" *ngIf="view === 'forgot'">Enter your email and we'll help you get back in.</p>
         <p class="form-intro" *ngIf="view === 'reset'">Enter the reset token and set a new password.</p>
 
-        <div class="notice notice-success" *ngIf="message">{{ message }}</div>
-        <div class="notice notice-error" *ngIf="error">{{ error }}</div>
         <form *ngIf="view === 'login'" (ngSubmit)="login()">
           <label>Email address<input name="email" type="email" [(ngModel)]="loginForm.email" placeholder="you@example.com" required autocomplete="email"></label>
           <label>Password<input name="password" type="password" [(ngModel)]="loginForm.password" placeholder="Your password" required autocomplete="current-password"></label>
@@ -79,9 +86,6 @@
       <a *ngIf="isAdmin" href="#passenger-manifest">Passenger Manifest</a>
       <a href="#booking-activity">{{ isAdmin ? 'Booking activity' : 'Your tickets' }}</a>
     </nav>
-    <div class="notice notice-success" *ngIf="message">{{ message }}</div>
-    <div class="notice notice-error" *ngIf="error">{{ error }}</div>
-
     <ng-container *ngIf="seatPickerTripId === null; else seatSelectionPage">
     <section class="admin-tools" *ngIf="isAdmin">
       <div class="section-heading"><div><p class="eyebrow">OPERATIONS</p><h2>Build your network</h2></div></div>
@@ -106,8 +110,28 @@
             <label>To<input name="destination" [(ngModel)]="tripForm.destination" placeholder="Mysuru" required></label>
           </div>
           <div class="field-pair">
-            <label>Departure<input name="departure" type="datetime-local" [value]="tripForm.departureUtc" (input)="updateTripDateTime('departureUtc', $event)" (change)="updateTripDateTime('departureUtc', $event)" required></label>
-            <label>Arrival<input name="arrival" type="datetime-local" [value]="tripForm.arrivalUtc" (input)="updateTripDateTime('arrivalUtc', $event)" (change)="updateTripDateTime('arrivalUtc', $event)" required></label>
+            <div class="trip-date-time">
+              <label>Departure date<input name="departureDate" type="date" [(ngModel)]="tripForm.departureDate" required></label>
+              <div>
+                <span class="trip-time-label">Departure time</span>
+                <div class="trip-time-fields">
+                  <label>Hour<select name="departureHour" [(ngModel)]="tripForm.departureHour" required><option value="" disabled>Select</option><option *ngFor="let hour of tripHours" [value]="hour">{{ hour }}</option></select></label>
+                  <label>Minute<select name="departureMinute" [(ngModel)]="tripForm.departureMinute" required><option value="" disabled>Select</option><option *ngFor="let minute of tripMinutes" [value]="minute">{{ minute }}</option></select></label>
+                  <label>AM/PM<select name="departurePeriod" [(ngModel)]="tripForm.departurePeriod" required><option value="" disabled>Select</option><option *ngFor="let period of tripPeriods" [value]="period">{{ period }}</option></select></label>
+                </div>
+              </div>
+            </div>
+            <div class="trip-date-time">
+              <label>Arrival date<input name="arrivalDate" type="date" [(ngModel)]="tripForm.arrivalDate" required></label>
+              <div>
+                <span class="trip-time-label">Arrival time</span>
+                <div class="trip-time-fields">
+                  <label>Hour<select name="arrivalHour" [(ngModel)]="tripForm.arrivalHour" required><option value="" disabled>Select</option><option *ngFor="let hour of tripHours" [value]="hour">{{ hour }}</option></select></label>
+                  <label>Minute<select name="arrivalMinute" [(ngModel)]="tripForm.arrivalMinute" required><option value="" disabled>Select</option><option *ngFor="let minute of tripMinutes" [value]="minute">{{ minute }}</option></select></label>
+                  <label>AM/PM<select name="arrivalPeriod" [(ngModel)]="tripForm.arrivalPeriod" required><option value="" disabled>Select</option><option *ngFor="let period of tripPeriods" [value]="period">{{ period }}</option></select></label>
+                </div>
+              </div>
+            </div>
           </div>
           <button class="button button-outline" [disabled]="busy">Publish trip <span>↗</span></button>
         </form>
@@ -124,7 +148,7 @@
           <select name="reportTrip" [ngModel]="reportTripId" (ngModelChange)="selectReportTrip($event)">
             <option [ngValue]="null">Select a trip</option>
             <option *ngFor="let trip of managedTrips" [ngValue]="trip.id">
-              {{ trip.origin }} → {{ trip.destination }} · {{ trip.departureUtc | date:'MMM d, y · h:mm a' }} · {{ trip.status }}
+              {{ trip.origin }} → {{ trip.destination }} · {{ trip.departureUtc | date:'MMM d, y · h:mm a':'+0530' }} · {{ trip.status }}
             </option>
           </select>
         </label>
@@ -140,8 +164,8 @@
           <dl class="report-trip-details">
             <div><dt>Bus</dt><dd>{{ trip.busName }} · {{ trip.capacity }} seats</dd></div>
             <div><dt>Bus registration number</dt><dd>{{ trip.busRegistrationNumber }}</dd></div>
-            <div><dt>Departure</dt><dd>{{ trip.departureUtc | date:'EEE, MMM d, y · h:mm a' }}</dd></div>
-            <div><dt>Arrival</dt><dd>{{ trip.arrivalUtc | date:'EEE, MMM d, y · h:mm a' }}</dd></div>
+            <div><dt>Departure</dt><dd>{{ trip.departureUtc | date:'EEE, MMM d, y · h:mm a':'+0530' }}</dd></div>
+            <div><dt>Arrival</dt><dd>{{ trip.arrivalUtc | date:'EEE, MMM d, y · h:mm a':'+0530' }}</dd></div>
             <div><dt>Fare</dt><dd>{{ trip.price | currency:'INR':'symbol':'1.0-0' }}</dd></div>
             <div><dt>Booking records</dt><dd>{{ reportBookings.length }}</dd></div>
           </dl>
@@ -178,11 +202,12 @@
           <section class="report-bookings-section">
             <div class="report-section-heading"><h4>Booked passenger details</h4><span>{{ reportBookings.length }} record(s)</span></div>
             <div class="report-table-wrap" *ngIf="reportBookings.length; else noReportBookings">
-              <p class="booking-activity-count">Showing {{ reportBookingPageStart }}–{{ reportBookingPageEnd }} of {{ reportBookings.length }} passenger records</p>
+              <p class="booking-activity-count no-print">Showing {{ reportBookingPageStart }}–{{ reportBookingPageEnd }} of {{ reportBookings.length }} passenger records</p>
               <table class="report-bookings-table">
                 <thead><tr><th>Seat</th><th>Passenger</th><th>Age</th><th>Gender</th><th>Mobile</th><th>Mandram / Circle Name</th><th>Booked by</th><th>Account email</th><th>Status</th></tr></thead>
                 <tbody>
-                  <tr *ngFor="let booking of displayedReportBookings">
+                  <tr *ngFor="let booking of reportBookings; let index = index"
+                    [class.report-page-hidden]="!isReportBookingVisible(index)">
                     <td>{{ booking.seatNumber | number:'2.0' }}</td>
                     <td>{{ booking.passengerName || 'Not recorded' }}</td>
                     <td>{{ booking.passengerAge || '—' }}</td>
@@ -217,7 +242,7 @@
         <article class="managed-trip-card" *ngFor="let trip of managedTrips">
           <div class="managed-trip-details">
             <strong>{{ trip.origin }} <span>→</span> {{ trip.destination }}</strong>
-            <small>{{ trip.busName }} · {{ trip.departureUtc | date:'EEE, MMM d · h:mm a' }} · {{ trip.bookingCount }} booking(s)</small>
+            <small>{{ trip.busName }} · {{ trip.departureUtc | date:'EEE, MMM d · h:mm a':'+0530' }} · {{ trip.bookingCount }} booking(s)</small>
           </div>
           <span class="trip-status" [class.trip-status-cancelled]="trip.status === 'Cancelled'">{{ trip.status }}</span>
           <div class="managed-trip-actions">
@@ -238,9 +263,9 @@
       </div>
       <div class="trip-list" *ngIf="trips.length; else noTrips">
         <article class="trip-card" *ngFor="let trip of trips">
-          <div class="trip-date"><span>{{ trip.departureUtc | date:'MMM' | uppercase }}</span><strong>{{ trip.departureUtc | date:'dd' }}</strong><small>{{ trip.departureUtc | date:'EEE' | uppercase }}</small></div>
+          <div class="trip-date"><span>{{ trip.departureUtc | date:'MMM':'+0530' | uppercase }}</span><strong>{{ trip.departureUtc | date:'dd':'+0530' }}</strong><small>{{ trip.departureUtc | date:'EEE':'+0530' | uppercase }}</small></div>
           <div class="trip-main">
-            <div class="route-row"><div><strong>{{ trip.origin }}</strong><small>{{ trip.departureUtc | date:'h:mm a' }}</small></div><div class="route-duration"><span></span><small>{{ trip.departureUtc | date:'MMM d' }}</small></div><div><strong>{{ trip.destination }}</strong><small>{{ trip.arrivalUtc | date:'h:mm a' }}</small></div></div>
+            <div class="route-row"><div><strong>{{ trip.origin }}</strong><small>{{ trip.departureUtc | date:'MMM d · h:mm a':'+0530' }}</small></div><div class="route-duration"><span></span></div><div><strong>{{ trip.destination }}</strong><small>{{ trip.arrivalUtc | date:'MMM d · h:mm a':'+0530' }}</small></div></div>
             <div class="trip-meta"><span>{{ trip.busName }}</span><span>·</span><span>{{ trip.availableSeats }} seats left</span><span>·</span><span>{{ trip.capacity }} seats</span></div>
           </div>
           <div class="trip-price"><span>ONE WAY</span><strong>{{ trip.price | currency:'INR':'symbol':'1.0-0' }}</strong><div class="trip-actions"><button class="button button-outline" [disabled]="trip.availableSeats < 1 || busy" (click)="toggleSeatPicker(trip)">Choose seat <span>↗</span></button></div></div>
@@ -304,7 +329,7 @@
         <div class="seat-page-heading">
           <p class="eyebrow">CHOOSE YOUR SEAT</p>
           <h1>Your journey, your seat.</h1>
-          <p>{{ trip.origin }} <span>→</span> {{ trip.destination }} · {{ trip.departureUtc | date:'EEE, MMM d · h:mm a' }}</p>
+          <p>{{ trip.origin }} <span>→</span> {{ trip.destination }} · {{ trip.departureUtc | date:'EEE, MMM d · h:mm a':'+0530' }}</p>
         </div>
         <div class="seat-page-card">
           <div class="seat-page-legend">
@@ -339,7 +364,12 @@
               <div class="passenger-fields">
                 <label>Name
                   <input [name]="'passengerName' + seatNumber" [(ngModel)]="passengerForSeat(trip.id, seatNumber).name"
-                    placeholder="Passenger name" maxlength="100" required autocomplete="name">
+                    placeholder="Passenger name" maxlength="100" required autocomplete="name"
+                    [class.invalid-field]="showPassengerValidation(trip.id) && !isValidPassengerName(passengerForSeat(trip.id, seatNumber).name)"
+                    [attr.aria-invalid]="showPassengerValidation(trip.id) && !isValidPassengerName(passengerForSeat(trip.id, seatNumber).name)">
+                  <small class="field-validation-error" *ngIf="showPassengerValidation(trip.id) && !isValidPassengerName(passengerForSeat(trip.id, seatNumber).name)">
+                    Enter a valid name using letters, spaces, apostrophes, or hyphens.
+                  </small>
                 </label>
                 <label>Age
                   <input [name]="'passengerAge' + seatNumber" type="number" min="1" max="120" step="1"
@@ -356,7 +386,12 @@
                 <label>Mobile number
                   <input [name]="'passengerMobile' + seatNumber" type="tel"
                     [(ngModel)]="passengerForSeat(trip.id, seatNumber).mobileNumber"
-                    placeholder="Mobile number" maxlength="20" pattern="[0-9+() -]{7,20}" required autocomplete="tel">
+                    placeholder="10-digit mobile number" maxlength="20" required autocomplete="tel"
+                    [class.invalid-field]="showPassengerValidation(trip.id) && !isValidMobileNumber(passengerForSeat(trip.id, seatNumber).mobileNumber)"
+                    [attr.aria-invalid]="showPassengerValidation(trip.id) && !isValidMobileNumber(passengerForSeat(trip.id, seatNumber).mobileNumber)">
+                  <small class="field-validation-error" *ngIf="showPassengerValidation(trip.id) && !isValidMobileNumber(passengerForSeat(trip.id, seatNumber).mobileNumber)">
+                    Enter a valid 10-digit Indian mobile number starting with 6–9.
+                  </small>
                 </label>
                 <label>Mandram / Circle Name
                   <input [name]="'passengerCircleName' + seatNumber"

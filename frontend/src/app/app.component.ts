@@ -25,6 +25,7 @@ export class AppComponent implements OnInit {
   reportGeneratedAt = new Date();
   selectedSeats: Record<number, number[]> = {};
   passengerDetails: Record<number, Record<number, PassengerDetails>> = {};
+  passengerValidationAttempted: Record<number, boolean> = {};
   bookingPage = 1;
   readonly bookingPageSize = 10;
   reportBookingPage = 1;
@@ -42,7 +43,14 @@ export class AppComponent implements OnInit {
   forgotEmail = '';
   newPassword = '';
   busForm = { name: '', registrationNumber: '', capacity: 50 };
-  tripForm = { busId: 0, origin: '', destination: '', departureUtc: '', arrivalUtc: '', price: 25 };
+  readonly tripHours = Array.from({ length: 12 }, (_, index) => String(index + 1));
+  readonly tripMinutes = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, '0'));
+  readonly tripPeriods = ['AM', 'PM'];
+  tripForm = {
+    busId: 0, origin: '', destination: '', departureDate: '', departureHour: '',
+    departureMinute: '', departurePeriod: '', arrivalDate: '', arrivalHour: '',
+    arrivalMinute: '', arrivalPeriod: '', price: 25
+  };
 
   constructor(private readonly api: ApiService) {}
 
@@ -78,6 +86,10 @@ export class AppComponent implements OnInit {
   get displayedReportBookings(): Booking[] {
     const start = (this.reportBookingPage - 1) * this.bookingPageSize;
     return this.reportBookings.slice(start, start + this.bookingPageSize);
+  }
+  isReportBookingVisible(index: number): boolean {
+    const start = (this.reportBookingPage - 1) * this.bookingPageSize;
+    return index >= start && index < start + this.bookingPageSize;
   }
   get reportBookingPageCount(): number {
     return Math.max(1, Math.ceil(this.reportBookings.length / this.bookingPageSize));
@@ -141,6 +153,7 @@ export class AppComponent implements OnInit {
   }
 
   book(trip: Trip): void {
+    this.passengerValidationAttempted[trip.id] = true;
     const seatNumbers = this.selectedSeats[trip.id] ?? [];
     if (seatNumbers.length < 1 || seatNumbers.length > 6) {
       this.error = 'Select between 1 and 6 seats before confirming your booking.';
@@ -174,6 +187,7 @@ export class AppComponent implements OnInit {
     this.seatPickerTripId = trip.id;
     this.selectedSeats[trip.id] = [];
     this.passengerDetails[trip.id] = {};
+    this.passengerValidationAttempted[trip.id] = false;
     this.error = '';
     this.seatRows = [];
     this.loadingSeatsTripId = trip.id;
@@ -219,6 +233,11 @@ export class AppComponent implements OnInit {
     }
   }
 
+  dismissNotification(): void {
+    this.message = '';
+    this.error = '';
+  }
+
   selectSeat(tripId: number, seat: Seat): void {
     if (seat.status === 'Booked') return;
     const selected = this.selectedSeats[tripId] ?? [];
@@ -255,13 +274,28 @@ export class AppComponent implements OnInit {
   hasCompletePassengerDetails(tripId: number): boolean {
     return this.selectedSeatNumbers(tripId).every(seatNumber => {
       const passenger = this.passengerDetails[tripId]?.[seatNumber];
-      const mobileDigits = passenger?.mobileNumber.replace(/\D/g, '') ?? '';
-      return !!passenger?.name.trim() && passenger.name.trim().length <= 100
+      return this.isValidPassengerName(passenger?.name ?? '')
         && passenger.age !== null && Number.isInteger(passenger.age) && passenger.age >= 1 && passenger.age <= 120
         && ['Male', 'Female', 'Other'].includes(passenger.gender)
-        && /^[0-9+() -]{7,20}$/.test(passenger.mobileNumber)
-        && mobileDigits.length >= 7 && mobileDigits.length <= 15;
+        && this.isValidMobileNumber(passenger?.mobileNumber ?? '');
     });
+  }
+
+  showPassengerValidation(tripId: number): boolean {
+    return this.passengerValidationAttempted[tripId] === true;
+  }
+
+  isValidPassengerName(name: string): boolean {
+    const trimmed = name.trim();
+    return trimmed.length > 0 && trimmed.length <= 100
+      && /^[\p{L}\p{M}][\p{L}\p{M} .'\u2019-]*$/u.test(trimmed);
+  }
+
+  isValidMobileNumber(mobileNumber: string): boolean {
+    const value = mobileNumber.trim();
+    if (!/^[0-9() -]+$/.test(value)) return false;
+    const digits = value.replace(/\D/g, '');
+    return digits.length === 10 && /^[6-9]/.test(digits);
   }
 
   isSeatSelected(tripId: number, seatNumber: number): boolean {
@@ -298,8 +332,12 @@ export class AppComponent implements OnInit {
   }
 
   addTrip(): void {
-    const departure = this.toUtcIso(this.tripForm.departureUtc);
-    const arrival = this.toUtcIso(this.tripForm.arrivalUtc);
+    const departure = this.toUtcIso(
+      this.tripForm.departureDate, this.tripForm.departureHour,
+      this.tripForm.departureMinute, this.tripForm.departurePeriod);
+    const arrival = this.toUtcIso(
+      this.tripForm.arrivalDate, this.tripForm.arrivalHour,
+      this.tripForm.arrivalMinute, this.tripForm.arrivalPeriod);
     if (!departure || !arrival) {
       this.error = 'Select both a departure and arrival date and time.';
       return;
@@ -310,20 +348,17 @@ export class AppComponent implements OnInit {
     }
 
     this.run(this.api.addTrip({
-      ...this.tripForm,
+      busId: this.tripForm.busId,
+      origin: this.tripForm.origin,
+      destination: this.tripForm.destination,
       departureUtc: departure,
-      arrivalUtc: arrival
+      arrivalUtc: arrival,
+      price: this.tripForm.price
     }), () => {
       this.message = 'Trip published and ready for bookings.';
       this.loadTrips();
       this.loadManagedTrips();
     });
-  }
-
-  updateTripDateTime(field: 'departureUtc' | 'arrivalUtc', event: Event): void {
-    if (event.target instanceof HTMLInputElement) {
-      this.tripForm[field] = event.target.value;
-    }
   }
 
   cancelTrip(trip: Trip): void {
@@ -450,10 +485,24 @@ export class AppComponent implements OnInit {
     return rows.filter(row => row.some(seat => seat !== null));
   }
 
-  private toUtcIso(localDateTime: string): string | null {
-    if (!localDateTime) return null;
-    const value = new Date(localDateTime);
-    return Number.isNaN(value.getTime()) ? null : value.toISOString();
+  private toUtcIso(date: string, hour: string, minute: string, period: string): string | null {
+    if (!date || !hour || !minute || (period !== 'AM' && period !== 'PM')) return null;
+    const hour12 = Number(hour);
+    const minuteValue = Number(minute);
+    if (!Number.isInteger(hour12) || hour12 < 1 || hour12 > 12
+      || !Number.isInteger(minuteValue) || minuteValue < 0 || minuteValue > 59) return null;
+
+    const dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+    if (!dateParts) return null;
+    const year = Number(dateParts[1]);
+    const month = Number(dateParts[2]);
+    const day = Number(dateParts[3]);
+    const hour24 = (hour12 % 12) + (period === 'PM' ? 12 : 0);
+    const indiaLocalTime = new Date(Date.UTC(year, month - 1, day, hour24, minuteValue));
+    if (indiaLocalTime.getUTCFullYear() !== year || indiaLocalTime.getUTCMonth() !== month - 1
+      || indiaLocalTime.getUTCDate() !== day) return null;
+    const indiaOffsetMilliseconds = (5 * 60 + 30) * 60 * 1000;
+    return new Date(indiaLocalTime.getTime() - indiaOffsetMilliseconds).toISOString();
   }
 
   private loadBuses(): void {

@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using BusBooking.Api;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -480,12 +481,14 @@ static bool IsValidPassengerDetails(string? name, int? age, string? gender, stri
         || age is < 1 or > 120 || string.IsNullOrWhiteSpace(gender)
         || string.IsNullOrWhiteSpace(mobileNumber) || mobileNumber.Trim().Length > 20)
         return false;
+    if (!Regex.IsMatch(name.Trim(), @"^[\p{L}\p{M}][\p{L}\p{M} .'\u2019-]*$")
+        || !Regex.IsMatch(mobileNumber.Trim(), @"^[0-9() -]+$"))
+        return false;
     if (gender is not ("Male" or "Female" or "Other")
         && !new[] { "Male", "Female", "Other" }.Contains(gender, StringComparer.OrdinalIgnoreCase))
         return false;
-    var digitCount = mobileNumber.Count(char.IsDigit);
-    return digitCount is >= 7 and <= 15
-        && mobileNumber.All(character => char.IsDigit(character) || character is '+' or '(' or ')' or '-' or ' ');
+    var digits = new string(mobileNumber.Where(char.IsDigit).ToArray());
+    return digits.Length == 10 && digits[0] is >= '6' and <= '9';
 }
 
 static bool IsValidCircleName(string? circleName) =>
