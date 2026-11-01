@@ -17,7 +17,7 @@
   </a>
   <div class="top-actions" *ngIf="user; else guestHeader">
     <span class="hello">Hello, {{ user.name }}</span>
-    <span class="role-pill" [class.admin-pill]="isAdmin">{{ user.role }}</span>
+    <!-- <span class="role-pill" [class.admin-pill]="isAdmin">{{ user.role }}</span> -->
     <button class="button button-quiet button-small" (click)="logout()">Sign out</button>
   </div>
   <ng-template #guestHeader><span class="header-caption">Pilgrim Bus Booking Bengaluru → Melmaruvathur</span></ng-template>
